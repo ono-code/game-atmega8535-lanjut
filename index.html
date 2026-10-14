@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVR-Master: Petualangan Mikrokontroler ATmega8535 & BASCOM-AVR</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        tech: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155',
+                            accent: '#38bdf8',
+                            ledRed: '#ff4d4d',
+                            ledGreen: '#22c55e',
+                            chip: '#27272a'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+        
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* LED Glow Effects */
+        .led-off {
+            background-color: #334155;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+            border: 1px solid #475569;
+        }
+        
+        .led-on-red {
+            background-color: #ef4444;
+            box-shadow: 0 0 15px #ef4444, inset 0 -2px 4px rgba(0,0,0,0.4);
+            border: 1px solid #f87171;
+        }
+
+        .led-on-green {
+            background-color: #22c55e;
+            box-shadow: 0 0 15px #22c55e, inset 0 -2px 4px rgba(0,0,0,0.4);
+            border: 1px solid #4ade80;
+        }
+
+        .led-on-yellow {
+            background-color: #eab308;
+            box-shadow: 0 0 15px #eab308, inset 0 -2px 4px rgba(0,0,0,0.4);
+            border: 1px solid #fde047;
+        }
+
+        /* LCD Screen Retro Style */
+        .lcd-screen {
+            background-color: #7b9c1d;
+            color: #122102;
+            text-shadow: 0px 0px 1px rgba(0, 0, 0, 0.4);
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            border: 4px solid #334155;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Chip Pin Animation */
+        .pin-active {
+            color: #38bdf8;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- HEADER BAR -->
+    <header class="bg-tech-card/90 backdrop-blur border-b border-tech-border sticky top-0 z-50 px-4 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-tech-accent flex items-center justify-center text-slate-900 font-extrabold text-xl shadow-md">
+                    <i class="fa-solid font-mono fa-microchip"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide text-white flex items-center gap-2">
+                        AVR-Master <span class="text-xs font-semibold px-2 py-0.5 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">BASCOM-AVR ATmega8535</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Modul Edukasi Interaktif Kelas 11 SMK TEI</p>
+                </div>
+            </div>
+
+            <!-- Gamification Status Bar -->
+            <div class="flex items-center gap-4 bg-tech-dark/80 px-4 py-2 rounded-xl border border-tech-border">
+                <!-- Level Badge -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400 text-sm"></i>
+                    <div class="text-xs">
+                        <span class="text-slate-400 block">Level</span>
+                        <span id="player-level" class="font-bold text-amber-400">1 (Pemula AVR)</span>
+                    </div>
+                </div>
+
+                <div class="h-6 w-px bg-tech-border"></div>
+
+                <!-- EXP Progress -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-tech-accent text-sm"></i>
+                    <div class="text-xs">
+                        <span class="text-slate-400 block">Poin EXP</span>
+                        <span id="player-exp" class="font-bold text-tech-accent">0 / 500</span>
+                    </div>
+                </div>
+
+                <div class="h-6 w-px bg-tech-border"></div>
+
+                <!-- Sound FX Toggle -->
+                <button id="sound-btn" onclick="toggleSound()" class="p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800" title="Suara Efek">
+                    <i class="fa-solid fa-volume-high text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN NAVIGATION TABS -->
+    <nav class="bg-tech-dark border-b border-tech-border px-4 pt-2">
+        <div class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <button onclick="switchTab('materi')" id="tab-btn-materi" class="tab-btn active px-4 py-2.5 rounded-t-xl text-sm font-medium transition border-b-2 border-brand-500 text-brand-400 bg-tech-card flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-book-open"></i> 1. Materi & Pinout IC
+            </button>
+            <button onclick="switchTab('petualangan')" id="tab-btn-petualangan" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-tech-card/50 flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-gamepad"></i> 2. Misi Petualangan
+            </button>
+            <button onclick="switchTab('simulator')" id="tab-btn-simulator" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-tech-card/50 flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-microchip"></i> 3. Lab Hardware & Simulator Live
+            </button>
+            <button onclick="switchTab('puzzle')" id="tab-btn-puzzle" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-tech-card/50 flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-puzzle-piece"></i> 4. Tantangan Susun Kode
+            </button>
+            <button onclick="switchTab('kuis')" id="tab-btn-kuis" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-tech-card/50 flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-graduation-cap"></i> 5. Kuis Evaluasi SMK
+            </button>
+            <button onclick="switchTab('kamus')" id="tab-btn-kamus" class="tab-btn px-4 py-2.5 rounded-t-xl text-sm font-medium transition text-slate-400 hover:text-slate-200 border-b-2 border-transparent hover:bg-tech-card/50 flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-code"></i> 6. Cheat Sheet BASCOM
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-grow">
+
+        <!-- TAB 1: MATERI & PINOUT INTERAKTIF -->
+        <section id="tab-materi" class="tab-content space-y-6">
+            <div class="bg-tech-card rounded-2xl p-6 border border-tech-border shadow-xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="p-3 bg-brand-500/10 text-brand-400 rounded-xl border border-brand-500/20"><i class="fa-solid fa-layer-group text-2xl"></i></span>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Pengenalan Mikrokontroler ATmega8535</h2>
+                        <p class="text-sm text-slate-400">Dasar Arsitektur Register & Hardware untuk Siswa Kelas 11 TEI</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <!-- Concept 1 -->
+                    <div class="bg-tech-dark p-5 rounded-xl border border-tech-border hover:border-brand-500/50 transition">
+                        <div class="text-brand-400 font-bold mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-memory"></i> Register Utama (DDR, PORT, PIN)
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                            Mikrokontroler AVR memiliki 3 register kunci untuk mengatur setiap Port I/O:
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-2 font-mono">
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-brand-400">DDRx:</b> Menentukan Arah Data (0 = Input, 1 = Output).</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-brand-400">PORTx:</b> Mengeluarkan sinyal logika High (1/5V) atau Low (0/0V).</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-brand-400">PINx:</b> Membaca logika sinyal masukan dari luar (Saklar/Sensor).</li>
+                        </ul>
+                    </div>
+
+                    <!-- Concept 2 -->
+                    <div class="bg-tech-dark p-5 rounded-xl border border-tech-border hover:border-brand-500/50 transition">
+                        <div class="text-tech-accent font-bold mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-code"></i> Perintah Sintaks BASCOM-AVR
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                            Bahasa BASIC pada BASCOM-AVR sangat mudah dibaca karena mirip bahasa manusia:
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-2 font-mono">
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-tech-accent">$regfile = "m8535.dat"</b> (Deklarasi chip)</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-tech-accent">$crystal = 8000000</b> (Frekuensi clock 8MHz)</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-tech-accent">Config Portb = Output</b> (Port B jadi keluaran)</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-tech-accent">Set Portb.0 / Reset Portb.0</b> (HIGH / LOW)</li>
+                        </ul>
+                    </div>
+
+                    <!-- Concept 3 -->
+                    <div class="bg-tech-dark p-5 rounded-xl border border-tech-border hover:border-brand-500/50 transition">
+                        <div class="text-amber-400 font-bold mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-plug flex-shrink-0"></i> Struktur Port ATmega8535
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed mb-3">
+                            ATmega8535 memiliki kemasan DIP 40 Pin dengan 4 buah Port 8-bit (PORTA, PORTB, PORTC, PORTD):
+                        </p>
+                        <ul class="text-xs text-slate-400 space-y-2">
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-amber-400">PORTA (Pin 33-40):</b> I/O Digital + Input ADC Analog.</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-amber-400">PORTB (Pin 1-8):</b> I/O Digital + SPI + Timer/Counter.</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-amber-400">PORTC (Pin 22-29):</b> I/O Digital + JTAG + I2C.</li>
+                            <li class="p-2 bg-slate-900/80 rounded border border-slate-800"><b class="text-amber-400">PORTD (Pin 14-21):</b> I/O Digital + Komunikasi USART (TX/RX).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Interactive Pinout Explorer -->
+                <div class="mt-8 pt-6 border-t border-tech-border">
+                    <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-microchip text-brand-400"></i> Diagram Pinout Interaktif ATmega8535 (DIP 40)
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-4">Arahkan kursor atau ketuk pin IC di bawah ini untuk melihat fungsi & konfigurasi register BASCOM-nya!</p>
+
+                    <div class="bg-tech-dark p-6 rounded-2xl border border-tech-border flex justify-center items-center overflow-x-auto">
+                        <div class="relative bg-tech-chip p-6 rounded-xl border-2 border-slate-700 shadow-2xl min-w-[340px] max-w-lg text-center">
+                            <!-- IC Notch -->
+                            <div class="w-8 h-4 bg-slate-900 rounded-b-full border-b border-x border-slate-600 mx-auto -mt-6 mb-4"></div>
+                            <span class="text-xs font-mono font-bold tracking-widest text-slate-400 block mb-4">ATMEL ATmega8535-16PU</span>
+
+                            <div class="grid grid-cols-2 gap-x-12 text-xs font-mono">
+                                <!-- Left Pins (1 to 20) -->
+                                <div class="space-y-2 text-left">
+                                    <div onclick="showPinInfo(1, 'PB0 (XCK/T0)', 'PORTB.0 - Digital I/O / External Clock Input')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-500 group-hover:text-brand-400">1</span> <span class="text-slate-300 font-semibold">PB0</span>
+                                    </div>
+                                    <div onclick="showPinInfo(2, 'PB1 (T1)', 'PORTB.1 - Digital I/O / Timer 1 Input')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-500 group-hover:text-brand-400">2</span> <span class="text-slate-300 font-semibold">PB1</span>
+                                    </div>
+                                    <div onclick="showPinInfo(3, 'PB2 (AIN0/INT2)', 'PORTB.2 - Digital I/O / External Interrupt 2')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-500 group-hover:text-brand-400">3</span> <span class="text-slate-300 font-semibold">PB2</span>
+                                    </div>
+                                    <div onclick="showPinInfo(4, 'PB3 (AIN1/OC0)', 'PORTB.3 - Digital I/O / Timer 0 PWM')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-500 group-hover:text-brand-400">4</span> <span class="text-slate-300 font-semibold">PB3</span>
+                                    </div>
+                                    <div onclick="showPinInfo(9, 'RESET', 'Reset Hardware Pin (Active Low)')" class="cursor-pointer hover:bg-red-900/50 p-1 rounded flex items-center justify-between text-red-400">
+                                        <span>9</span> <span class="font-bold">RESET</span>
+                                    </div>
+                                    <div onclick="showPinInfo(10, 'VCC', 'Catu Daya Positif (+5V DC)')" class="cursor-pointer hover:bg-emerald-900/50 p-1 rounded flex items-center justify-between text-emerald-400">
+                                        <span>10</span> <span class="font-bold">VCC (+5V)</span>
+                                    </div>
+                                    <div onclick="showPinInfo(11, 'GND', 'Ground System (0V)')" class="cursor-pointer hover:bg-slate-800 p-1 rounded flex items-center justify-between text-slate-400">
+                                        <span>11</span> <span class="font-bold">GND</span>
+                                    </div>
+                                    <div onclick="showPinInfo(12, 'XTAL2', 'Koneksi Kristal Oscilator Utama')" class="cursor-pointer hover:bg-amber-900/50 p-1 rounded flex items-center justify-between text-amber-400">
+                                        <span>12</span> <span>XTAL2</span>
+                                    </div>
+                                    <div onclick="showPinInfo(13, 'XTAL1', 'Koneksi Kristal Oscilator Utama')" class="cursor-pointer hover:bg-amber-900/50 p-1 rounded flex items-center justify-between text-amber-400">
+                                        <span>13</span> <span>XTAL1</span>
+                                    </div>
+                                </div>
+
+                                <!-- Right Pins (21 to 40) -->
+                                <div class="space-y-2 text-right">
+                                    <div onclick="showPinInfo(40, 'PA0 (ADC0)', 'PORTA.0 - Digital I/O / Input Analog ADC Channel 0')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-300 font-semibold">PA0</span> <span class="text-slate-500 group-hover:text-brand-400">40</span>
+                                    </div>
+                                    <div onclick="showPinInfo(39, 'PA1 (ADC1)', 'PORTA.1 - Digital I/O / Input Analog ADC Channel 1')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-300 font-semibold">PA1</span> <span class="text-slate-500 group-hover:text-brand-400">39</span>
+                                    </div>
+                                    <div onclick="showPinInfo(32, 'AREF', 'Tegangan Referensi Analog ADC')" class="cursor-pointer hover:bg-amber-900/50 p-1 rounded flex items-center justify-between text-amber-400">
+                                        <span>AREF</span> <span class="text-slate-500">32</span>
+                                    </div>
+                                    <div onclick="showPinInfo(30, 'AVCC', 'Catu Daya Khusus Modul ADC (+5V)')" class="cursor-pointer hover:bg-emerald-900/50 p-1 rounded flex items-center justify-between text-emerald-400">
+                                        <span>AVCC</span> <span class="text-slate-500">30</span>
+                                    </div>
+                                    <div onclick="showPinInfo(29, 'PC7 (TOSC2)', 'PORTC.7 - Digital I/O')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-300 font-semibold">PC7</span> <span class="text-slate-500 group-hover:text-brand-400">29</span>
+                                    </div>
+                                    <div onclick="showPinInfo(22, 'PC0 (SCL)', 'PORTC.0 - Digital I/O / I2C Clock Line')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-300 font-semibold">PC0</span> <span class="text-slate-500 group-hover:text-brand-400">22</span>
+                                    </div>
+                                    <div onclick="showPinInfo(21, 'PD7 (OC2)', 'PORTD.7 - Digital I/O / Timer 2 PWM Output')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-300 font-semibold">PD7</span> <span class="text-slate-500 group-hover:text-brand-400">21</span>
+                                    </div>
+                                    <div onclick="showPinInfo(15, 'PD1 (TXD)', 'PORTD.1 - Transmitter USART Seri')" class="cursor-pointer hover:bg-slate-700 p-1 rounded flex items-center justify-between group">
+                                        <span class="text-slate-300 font-semibold">PD1</span> <span class="text-slate-500 group-hover:text-brand-400">15</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Pin Detail Display -->
+                    <div id="pin-detail-box" class="mt-4 p-4 bg-slate-900/90 rounded-xl border border-tech-border text-xs flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-circle-info text-tech-accent text-lg"></i>
+                            <div>
+                                <span id="pin-title" class="font-bold text-tech-accent text-sm block">Klik salah satu Pin pada diagram IC diatas</span>
+                                <span id="pin-desc" class="text-slate-400">Detail fungsi dan sintaks BASCOM-AVR terkait akan muncul di sini.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: MISI PETUALANGAN -->
+        <section id="tab-petualangan" class="tab-content hidden space-y-6">
+            <div class="bg-tech-card rounded-2xl p-6 border border-tech-border shadow-xl">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-compass text-amber-400"></i> Misi Petualangan Teknisi AVR
+                        </h2>
+                        <p class="text-sm text-slate-400">Selesaikan setiap studi kasus pemrograman industri untuk mendapatkan poin EXP!</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400 block">Progres Misi</span>
+                        <span id="mission-progress-text" class="text-sm font-bold text-brand-400">0 dari 4 Selesai</span>
+                    </div>
+                </div>
+
+                <!-- Mission List Cards -->
+                <div class="space-y-4" id="mission-list">
+                    <!-- Mission cards dynamically populated via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: VIRTUAL LAB & SIMULATOR LIVE -->
+        <section id="tab-simulator" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Interactive Code Editor (5 cols) -->
+                <div class="lg:col-span-5 bg-tech-card rounded-2xl p-5 border border-tech-border shadow-xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-code text-tech-accent"></i> Code Editor BASCOM-AVR
+                            </h3>
+                            <span class="text-[11px] bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2 py-0.5 rounded font-mono">m8535.dat</span>
+                        </div>
+
+                        <!-- Expanded Preset Loader Dropdown -->
+                        <div class="mb-3">
+                            <label class="text-[11px] font-semibold text-slate-400 block mb-1">Pilih Presets Contoh Program:</label>
+                            <select id="sample-code-select" onchange="loadSelectedSampleCode()" class="w-full bg-slate-900 border border-tech-border text-slate-200 text-xs rounded-xl p-2.5 focus:outline-none focus:border-brand-500 transition font-sans">
+                                <option value="blink">1. Kedip 8 LED (Blink Test PORTB)</option>
+                                <option value="runningLed">2. Running LED Bolak-Balik (Scanner / Knight Rider)</option>
+                                <option value="binaryCounter">3. Counter Biner 8-Bit (0 s/d 255)</option>
+                                <option value="buttonControl">4. Kontrol Saklar Input Push Button (Active Low)</option>
+                                <option value="trafficLight">5. Simulasi Lampu Lalu Lintas 3 Warna (PORTB.0 - PB.2)</option>
+                                <option value="lcdDynamic">6. Tampilan LCD Dynamic Text & Counter</option>
+                            </select>
+                        </div>
+
+                        <!-- Code Textarea -->
+                        <div class="relative rounded-xl overflow-hidden border border-tech-border bg-slate-950 font-mono text-xs">
+                            <div class="bg-slate-900 px-3 py-1.5 border-b border-slate-800 text-slate-500 flex justify-between text-[10px]">
+                                <span>main.bas</span>
+                                <span>BASCOM-AVR Syntax</span>
+                            </div>
+                            <textarea id="sim-code-input" rows="15" class="w-full bg-transparent p-3 text-emerald-400 focus:outline-none code-font resize-none leading-relaxed" spellcheck="false">$regfile = "m8535.dat"
+$crystal = 8000000
+
+Config Portb = Output
+
+Do
+   Portb = &B11111111
+   Waitms 500
+   Portb = &B00000000
+   Waitms 500
+Loop</textarea>
+                        </div>
+
+                        <!-- Simulation Speed Slider Control -->
+                        <div class="mt-3 flex items-center justify-between bg-slate-900/80 p-2.5 rounded-xl border border-tech-border text-xs">
+                            <span class="text-slate-400 text-[11px] flex items-center gap-1.5"><i class="fa-solid fa-gauge-high text-amber-400"></i> Kecepatan Simulasi:</span>
+                            <div class="flex items-center gap-2">
+                                <input type="range" id="sim-speed-slider" min="100" max="1000" step="100" value="400" onchange="updateSimSpeed(this.value)" class="w-24 accent-brand-500 cursor-pointer">
+                                <span id="sim-speed-label" class="font-mono text-brand-400 text-[11px] w-12 text-right">400ms</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulator Controls -->
+                    <div class="mt-4 flex gap-3">
+                        <button onclick="runSimulator()" id="btn-run-sim" class="flex-1 py-3 px-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 text-xs">
+                            <i class="fa-solid fa-play"></i> Jalankan Simulasi
+                        </button>
+                        <button onclick="stopSimulator()" class="py-3 px-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-bold rounded-xl border border-red-500/30 transition flex items-center justify-center gap-2 text-xs">
+                            <i class="fa-solid fa-stop"></i> Stop
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Hardware Breadboard Simulation (7 cols) -->
+                <div class="lg:col-span-7 bg-tech-card rounded-2xl p-5 border border-tech-border shadow-xl space-y-5">
+                    <div class="flex items-center justify-between border-b border-tech-border pb-3">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-bread-slice text-amber-400"></i> Breadboard Hardware Virtual
+                        </h3>
+                        <span id="sim-status-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-semibold border border-slate-700">
+                            Status: Idle / Standby
+                        </span>
+                    </div>
+
+                    <!-- 1. PORTB - 8 LEDs Output Module (With Traffic Light Annotations) -->
+                    <div class="bg-tech-dark p-4 rounded-xl border border-tech-border">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-lightbulb text-amber-400"></i> Modul Output 8 LED (Terhubung ke PORTB.0 - PORTB.7)
+                            </span>
+                            <span id="traffic-annotation" class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Active High (1 = Nyala)</span>
+                        </div>
+
+                        <div class="grid grid-cols-8 gap-2 text-center">
+                            <!-- LED 7 down to 0 -->
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB7</span>
+                                <div id="led-7" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb7" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB6</span>
+                                <div id="led-6" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb6" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB5</span>
+                                <div id="led-5" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb5" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB4</span>
+                                <div id="led-4" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb4" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB3</span>
+                                <div id="led-3" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb3" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB2 <i class="fa-solid fa-traffic-light text-[8px] text-emerald-400" title="Lampu Hijau Traffic"></i></span>
+                                <div id="led-2" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb2" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB1 <i class="fa-solid fa-traffic-light text-[8px] text-amber-400" title="Lampu Kuning Traffic"></i></span>
+                                <div id="led-1" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb1" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="text-[10px] font-mono text-slate-400">PB0 <i class="fa-solid fa-traffic-light text-[8px] text-red-400" title="Lampu Merah Traffic"></i></span>
+                                <div id="led-0" class="w-7 h-7 rounded-full led-off transition-all duration-150"></div>
+                                <span id="val-pb0" class="text-[10px] font-mono text-slate-500">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. PORTD - Interactive Push Button Switches -->
+                    <div class="bg-tech-dark p-4 rounded-xl border border-tech-border">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-toggle-on text-tech-accent"></i> Modul Input Push Button (Terhubung ke PIND.0 - PIND.2)
+                            </span>
+                            <span class="text-[10px] font-mono text-slate-500">Active Low (0 = Ditekan)</span>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <button onmousedown="pressButton(0)" onmouseup="releaseButton(0)" class="btn-input p-3 bg-slate-800 hover:bg-slate-700 active:bg-tech-accent/30 border border-slate-600 rounded-xl flex-1 text-center font-mono text-xs text-white transition active:scale-95 shadow">
+                                <i class="fa-solid fa-fingerprint block mb-1 text-tech-accent text-sm"></i>
+                                SW1 (PIND.0)
+                            </button>
+                            <button onmousedown="pressButton(1)" onmouseup="releaseButton(1)" class="btn-input p-3 bg-slate-800 hover:bg-slate-700 active:bg-tech-accent/30 border border-slate-600 rounded-xl flex-1 text-center font-mono text-xs text-white transition active:scale-95 shadow">
+                                <i class="fa-solid fa-fingerprint block mb-1 text-tech-accent text-sm"></i>
+                                SW2 (PIND.1)
+                            </button>
+                            <button onmousedown="pressButton(2)" onmouseup="releaseButton(2)" class="btn-input p-3 bg-slate-800 hover:bg-slate-700 active:bg-tech-accent/30 border border-slate-600 rounded-xl flex-1 text-center font-mono text-xs text-white transition active:scale-95 shadow">
+                                <i class="fa-solid fa-fingerprint block mb-1 text-tech-accent text-sm"></i>
+                                SW3 (PIND.2)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. LCD Display 16x2 Virtual -->
+                    <div class="bg-tech-dark p-4 rounded-xl border border-tech-border">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-tv text-brand-400"></i> Modul Display LCD Alfanumerik 16x2 (PORTC)
+                            </span>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800/50">HD44780 Driver</span>
+                        </div>
+
+                        <div class="lcd-screen p-4 rounded-lg text-center space-y-1 font-mono tracking-widest text-sm font-extrabold select-none">
+                            <div id="lcd-line-1" class="h-6 leading-6 overflow-hidden">ATmega8535 TEI</div>
+                            <div id="lcd-line-2" class="h-6 leading-6 overflow-hidden">BASCOM-AVR READY</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: TANTANGAN SUSUN KODE PUZZLE -->
+        <section id="tab-puzzle" class="tab-content hidden space-y-6">
+            <div class="bg-tech-card rounded-2xl p-6 border border-tech-border shadow-xl">
+                
+                <!-- Puzzle Level Selector Header -->
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-5 border-b border-tech-border">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-puzzle-piece text-tech-accent"></i> Tantangan Susun Kode BASCOM-AVR
+                        </h2>
+                        <p class="text-sm text-slate-400 mt-0.5">Pilih level puzzle dan urutkan balok kode sintaks untuk menguji logika Anda!</p>
+                    </div>
+
+                    <!-- Level Selector Buttons -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0" id="puzzle-level-selector">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Active Level Info Card -->
+                <div class="bg-tech-dark p-4 rounded-xl border border-tech-border mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                        <span id="puzzle-level-title" class="text-sm font-bold text-brand-400 block">Level 1: LED Blink Dasar</span>
+                        <p id="puzzle-level-desc" class="text-xs text-slate-300 mt-1">Susun program untuk mengkonfigurasi PORTB sebagai output dan mengedipkan seluruh LED.</p>
+                    </div>
+                    <span id="puzzle-level-reward" class="px-3 py-1.5 bg-amber-400/10 text-amber-400 border border-amber-400/20 rounded-xl text-xs font-bold whitespace-nowrap">
+                        <i class="fa-solid fa-trophy mr-1"></i> Bonus +100 EXP
+                    </span>
+                </div>
+
+                <!-- Puzzle Drag and Drop Workspace -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <!-- Source Draggable Blocks -->
+                    <div class="bg-tech-dark p-4 rounded-xl border border-tech-border">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-list-ul text-tech-accent"></i> Potongan Kode Acak
+                            </h4>
+                            <span class="text-[10px] text-slate-500">Klik untuk menambahkan</span>
+                        </div>
+                        <div id="puzzle-source" class="space-y-2 min-h-[240px]">
+                            <!-- Draggable items populated JS -->
+                        </div>
+                    </div>
+
+                    <!-- Target Drop Zone -->
+                    <div class="bg-tech-dark p-4 rounded-xl border border-tech-border flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-xs font-bold text-brand-400 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-arrow-down-short-wide text-brand-400"></i> Urutan Program Utama
+                                </h4>
+                                <button onclick="resetCurrentPuzzleLevel()" class="text-[10px] text-slate-400 hover:text-white underline">
+                                    <i class="fa-solid fa-rotate-left mr-1"></i> Reset Urutan
+                                </button>
+                            </div>
+                            <div id="puzzle-target" class="space-y-2 min-h-[240px] p-3 bg-slate-950 rounded-xl border border-dashed border-slate-700">
+                                <!-- Target items drop here -->
+                            </div>
+                        </div>
+
+                        <div class="mt-5 flex gap-3">
+                            <button onclick="checkPuzzle()" class="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl transition shadow flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-circle-check text-sm"></i> Verifikasi Susunan Kode
+                            </button>
+                            <button onclick="nextPuzzleLevel()" id="btn-next-puzzle" class="hidden py-3 px-4 bg-tech-accent/20 hover:bg-tech-accent/30 text-tech-accent font-bold text-xs rounded-xl border border-tech-accent/30 transition flex items-center justify-center gap-2">
+                                Level Selanjutnya <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: KUIS EVALUASI SMK -->
+        <section id="tab-kuis" class="tab-content hidden space-y-6">
+            <div class="bg-tech-card rounded-2xl p-6 border border-tech-border shadow-xl max-w-3xl mx-auto">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-tech-border">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap text-brand-400"></i> Uji Kompetensi TEI Kelas 11
+                        </h2>
+                        <p class="text-sm text-slate-400">Evaluasi Pemahaman Pemrograman Mikrokontroler ATmega8535</p>
+                    </div>
+                    <div id="quiz-timer" class="font-mono text-amber-400 font-bold bg-amber-400/10 px-3 py-1.5 rounded-lg border border-amber-400/20 text-sm">
+                        <i class="fa-regular fa-clock"></i> <span id="quiz-time">10:00</span>
+                    </div>
+                </div>
+
+                <!-- Quiz Card Container -->
+                <div id="quiz-container">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: CHEAT SHEET BASCOM -->
+        <section id="tab-kamus" class="tab-content hidden space-y-6">
+            <div class="bg-tech-card rounded-2xl p-6 border border-tech-border shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-book text-amber-400"></i> Kamus Perintah Cepat BASCOM-AVR
+                </h2>
+                <p class="text-sm text-slate-400 mb-6">Referensi cepat sintaks penting untuk praktikum laboratorium elektronika industri.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-brand-400 font-bold text-sm block mb-1">$regfile = "m8535.dat"</code>
+                        <p class="text-slate-300">Menentukan berkas header definisi register spesifik untuk chip ATmega8535.</p>
+                    </div>
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-brand-400 font-bold text-sm block mb-1">$crystal = 8000000</code>
+                        <p class="text-slate-300">Memberitahu kompilator frekuensi osilator kristal eksternal yang terpasang (8 MHz).</p>
+                    </div>
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-tech-accent font-bold text-sm block mb-1">Config Portb = Output / Input</code>
+                        <p class="text-slate-300">Mengatur seluruh 8 pin pada PORTB sebagai saluran keluaran (Output) atau masukan (Input).</p>
+                    </div>
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-tech-accent font-bold text-sm block mb-1">Set Portb.0 / Reset Portb.0</code>
+                        <p class="text-slate-300">Mengubah logika pin individual: <code class="text-amber-300">Set</code> = HIGH (5V), <code class="text-amber-300">Reset</code> = LOW (0V).</p>
+                    </div>
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-amber-400 font-bold text-sm block mb-1">Wait 1 / Waitms 500</code>
+                        <p class="text-slate-300">Memberikan jeda waktu penundaan (delay) dalam hitungan detik (<code class="text-amber-300">Wait</code>) atau milidetik (<code class="text-amber-300">Waitms</code>).</p>
+                    </div>
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-amber-400 font-bold text-sm block mb-1">Do ... Loop</code>
+                        <p class="text-slate-300">Membuat perulangan tanpa henti (infinite loop) dalam program utama mikrokontroler.</p>
+                    </div>
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-emerald-400 font-bold text-sm block mb-1">Cls : Lcd "Halo TEI"</code>
+                        <p class="text-slate-300"><code class="text-emerald-300">Cls</code> membersihkan layar LCD, <code class="text-emerald-300">Lcd</code> menampilkan teks pada baris aktif.</p>
+                    </div>
+                    <div class="p-4 bg-tech-dark rounded-xl border border-tech-border">
+                        <code class="text-emerald-400 font-bold text-sm block mb-1">Lowerline</code>
+                        <p class="text-slate-300">Pindahkan kursor penulisan LCD ke baris kedua (baris bawah) pada LCD 16x2.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-tech-card border-t border-tech-border py-4 px-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>&copy; 2026 Modul Pembelajaran Interaktif Teknik Elektronika Industri (TEI) - SMK Kelas 11</span>
+            <span class="text-slate-400">Media Pembelajaran Mikrokontroler BASCOM-AVR & ATmega8535</span>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT GAME LOGIC -->
+    <script>
+        let playerState = {
+            level: 1,
+            exp: 0,
+            maxExp: 500,
+            soundEnabled: true,
+            completedMissions: [false, false, false, false]
+        };
+
+        let simInterval = null;
+        let isSimRunning = false;
+        let buttonStates = [1, 1, 1]; // Active Low switches (1 = released, 0 = pressed)
+        let simSpeedMs = 400; // Simulation step delay
+
+        function switchTab(tabId) {
+            playSound('click');
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.add('hidden'));
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active', 'border-brand-500', 'text-brand-400', 'bg-tech-card');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'border-brand-500', 'text-brand-400', 'bg-tech-card');
+                activeBtn.classList.remove('border-transparent', 'text-slate-400');
+            }
+        }
+
+        function showPinInfo(pin, title, desc) {
+            playSound('click');
+            document.getElementById('pin-title').innerText = `Pin ${pin}: ${title}`;
+            document.getElementById('pin-desc').innerText = desc;
+        }
+
+        function toggleSound() {
+            playerState.soundEnabled = !playerState.soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            if (playerState.soundEnabled) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high text-sm"></i>';
+                btn.classList.remove('text-slate-600');
+                btn.classList.add('text-slate-400');
+                playSound('click');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-sm"></i>';
+                btn.classList.remove('text-slate-400');
+                btn.classList.add('text-slate-600');
+            }
+        }
+
+        function playSound(type) {
+            if (!playerState.soundEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'click') {
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.05);
+                } else if (type === 'beep') {
+                    osc.frequency.setValueAtTime(300, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (type === 'win') {
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                }
+            } catch (e) {}
+        }
+
+        function pressButton(idx) {
+            buttonStates[idx] = 0; // Active low
+            playSound('click');
+        }
+
+        function releaseButton(idx) {
+            buttonStates[idx] = 1;
+        }
+
+        function setLEDState(byteVal) {
+            for (let i = 0; i < 8; i++) {
+                const isBitOn = (byteVal & (1 << i)) !== 0;
+                const ledEl = document.getElementById(`led-${i}`);
+                const valEl = document.getElementById(`val-pb${i}`);
+
+                if (ledEl) {
+                    ledEl.className = 'w-7 h-7 rounded-full transition-all duration-150 ' +
+                        (isBitOn ? (i === 0 ? 'led-on-red' : i === 1 ? 'led-on-yellow' : 'led-on-green') : 'led-off');
+                }
+                if (valEl) {
+                    valEl.innerText = isBitOn ? '1' : '0';
+                    valEl.className = 'text-[10px] font-mono ' + (isBitOn ? 'text-brand-400 font-bold' : 'text-slate-500');
+                }
+            }
+        }
+
+        function stopSimulator() {
+            if (simInterval) clearInterval(simInterval);
+            isSimRunning = false;
+            const badge = document.getElementById('sim-status-badge');
+            if (badge) {
+                badge.innerText = "Status: Idle / Standby";
+                badge.className = "text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 font-semibold border border-slate-700";
+            }
+            setLEDState(0x00);
+        }
+
+        function showNotification(msg) {
+            playSound('win');
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 bg-brand-600 text-white font-bold px-4 py-3 rounded-xl shadow-2xl border border-brand-400 z-50 text-sm flex items-center gap-2 animate-bounce';
+            toast.innerHTML = `<i class="fa-solid fa-award text-amber-300"></i> ${msg}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function addEXP(amount) {
+            playerState.exp += amount;
+            if (playerState.exp >= playerState.maxExp) {
+                playerState.level += 1;
+                playerState.exp = playerState.exp - playerState.maxExp;
+                playerState.maxExp += 250;
+                showNotification(`LEVEL UP! Selamat, Anda naik ke Level ${playerState.level}!`);
+            }
+            document.getElementById('player-level').innerText = `${playerState.level} (${playerState.level === 1 ? 'Pemula AVR' : playerState.level === 2 ? 'Teknisi Junior' : 'Master Micro'})`;
+            document.getElementById('player-exp').innerText = `${playerState.exp} / ${playerState.maxExp}`;
+        }
+
+        const missions = [
+            { id: 0, title: "Misi 1: Penguji LED (Blink Test)", desc: "Program PORTB untuk membuat 8 LED berkedip secara serentak.", exp: 100, keyword: "Portb =" },
+            { id: 1, title: "Misi 2: Running LED Scanner", desc: "Buat efek lampu berjalan (Knight Rider / Scanner) menggunakan logika pergeseran bit.", exp: 150, keyword: "Shift" },
+            { id: 2, title: "Misi 3: Kontrol Saklar Push Button", desc: "Membaca masukan saklar PIND.0 / PIND.1 untuk mengontrol output LED.", exp: 150, keyword: "Pind." },
+            { id: 3, title: "Misi 4: Penampil Teks LCD 16x2", desc: "Tampilkan teks identitas SMK TEI pada modul LCD 16x2.", exp: 200, keyword: "Lcd" }
+        ];
+
+        function renderMissions() {
+            const list = document.getElementById('mission-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            let completedCount = playerState.completedMissions.filter(Boolean).length;
+            document.getElementById('mission-progress-text').innerText = `${completedCount} dari ${missions.length} Selesai`;
+
+            missions.forEach(m => {
+                const isDone = playerState.completedMissions[m.id];
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${isDone ? 'bg-brand-900/20 border-brand-500/40' : 'bg-tech-dark border-tech-border'}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm ${isDone ? 'text-brand-400' : 'text-white'}">${m.title}</span>
+                            ${isDone ? '<span class="text-[10px] bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded font-bold border border-brand-500/30">SELESAI ✓</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">${m.desc}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-amber-400 bg-amber-400/10 px-3 py-1.5 rounded-lg border border-amber-400/20">+${m.exp} EXP</span>
+                        <button onclick="switchTab('simulator')" class="px-3 py-1.5 bg-tech-accent/20 hover:bg-tech-accent/30 text-tech-accent font-bold text-xs rounded-lg border border-tech-accent/30 transition">
+                            Coba di Lab
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function checkMissionSuccess(code) {
+            missions.forEach(m => {
+                if (!playerState.completedMissions[m.id] && code.includes(m.keyword)) {
+                    playerState.completedMissions[m.id] = true;
+                    addEXP(m.exp);
+                    showNotification(`Misi Ditempuh: ${m.title} Berhasil! (+${m.exp} EXP)`);
+                    renderMissions();
+                }
+            });
+        }
+
+        const quizQuestions = [
+            {
+                q: "Register manakah pada ATmega8535 yang berfungsi menentukan arah data I/O (Input atau Output)?",
+                options: ["PORTx", "DDRx", "PINx", "MCUCR"],
+                answer: 1
+            },
+            {
+                q: "Sintaks BASCOM-AVR manakah yang digunakan untuk mendefinisikan tipe mikrokontroler ATmega8535?",
+                options: ['$crystal = 8000000', '$regfile = "m8535.dat"', 'Config Portb = Output', 'Dim Chip As Byte'],
+                answer: 1
+            },
+            {
+                q: "Perintah 'Set Portb.0' dalam BASCOM-AVR menghasilkan sinyal keluaran sebesar...",
+                options: ["0 Volt (LOW)", "+5 Volt (HIGH)", "+12 Volt", "3.3 Volt PWM"],
+                answer: 1
+            },
+            {
+                q: "Untuk membaca nilai logika masukan dari saklar yang terhubung ke pin PORTD.0, sintaks yang tepat adalah...",
+                options: ["If Portd.0 = 1", "If Pind.0 = 0", "Config Portd = Output", "Set Pind.0"],
+                answer: 1
+            },
+            {
+                q: "Perintah 'Waitms 500' dalam program BASCOM-AVR menyebabkan tunda waktu selama...",
+                options: ["500 Detik", "50 Detik", "0.5 Detik (500 Milidetik)", "5 Milidetik"],
+                answer: 2
+            }
+        ];
+
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            if (!container) return;
+
+            if (currentQuizIndex >= quizQuestions.length) {
+                container.innerHTML = `
+                    <div class="text-center py-8 space-y-4">
+                        <div class="w-16 h-16 bg-amber-400/20 text-amber-400 rounded-full flex items-center justify-center mx-auto text-3xl border border-amber-400/40">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">Evaluasi Kuis Selesai!</h3>
+                        <p class="text-slate-300 text-sm">Skor Akhir Anda: <span class="text-brand-400 font-bold text-lg">${quizScore} / ${quizQuestions.length * 20}</span></p>
+                        <button onclick="resetQuiz()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs transition">
+                            Ulangi Kuis
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const q = quizQuestions[currentQuizIndex];
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-brand-400">Soal ${currentQuizIndex + 1} dari ${quizQuestions.length}</span>
+                        <span class="text-xs text-slate-400">Poin Per Soal: 20</span>
+                    </div>
+                    <h3 class="text-sm font-bold text-white leading-relaxed bg-tech-dark p-4 rounded-xl border border-tech-border">${q.q}</h3>
+                    <div class="space-y-2">
+                        ${q.options.map((opt, idx) => `
+                            <button onclick="submitAnswer(${idx})" class="w-full text-left p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-tech-border text-xs text-slate-200 transition font-mono hover:border-brand-500/50 flex items-center justify-between">
+                                <span>${String.fromCharCode(65 + idx)}. ${opt}</span>
+                                <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function submitAnswer(chosenIdx) {
+            const q = quizQuestions[currentQuizIndex];
+            if (chosenIdx === q.answer) {
+                playSound('win');
+                quizScore += 20;
+                addEXP(50);
+                showNotification("Jawaban Benar! (+50 EXP)");
+            } else {
+                playSound('beep');
+                alert(`Jawaban belum tepat. Jawaban yang benar adalah option ${String.fromCharCode(65 + q.answer)}.`);
+            }
+            currentQuizIndex++;
+            renderQuiz();
+        }
+
+        function resetQuiz() {
+            currentQuizIndex = 0;
+            quizScore = 0;
+            renderQuiz();
+        }
+
+        // Code Samples Dictionary for Simulator
+        const sampleCodes = {
+            blink: `$regfile = "m8535.dat"\n$crystal = 8000000\n\nConfig Portb = Output\n\nDo\n   Portb = &B11111111\n   Waitms 500\n   Portb = &B00000000\n   Waitms 500\nLoop`,
+            runningLed: `$regfile = "m8535.dat"\n$crystal = 8000000\n\nConfig Portb = Output\nDim Shift As Byte\n\nDo\n   For Shift = 0 To 7\n      Portb = 2 ^ Shift\n      Waitms 200\n   Next Shift\n   For Shift = 6 To 1 Step -1\n      Portb = 2 ^ Shift\n      Waitms 200\n   Next Shift\nLoop`,
+            binaryCounter: `$regfile = "m8535.dat"\n$crystal = 8000000\n\nConfig Portb = Output\nDim Counter As Byte\n\nDo\n   For Counter = 0 To 255\n      Portb = Counter\n      Waitms 200\n   Next Counter\nLoop`,
+            buttonControl: `$regfile = "m8535.dat"\n$crystal = 8000000\n\nConfig Portb = Output\nConfig Pind.0 = Input\nConfig Pind.1 = Input\nPortd.0 = 1 ' Pullup SW1\nPortd.1 = 1 ' Pullup SW2\n\nDo\n   If Pind.0 = 0 Then\n      Portb = &BF0 ' LED Kiri\n   Elseif Pind.1 = 0 Then\n      Portb = &B0F ' LED Kanan\n   Else\n      Portb = &B00 ' Mati\n   End If\nLoop`,
+            trafficLight: `$regfile = "m8535.dat"\n$crystal = 8000000\n\nConfig Portb = Output\n' PB0=Merah, PB1=Kuning, PB2=Hijau\n\nDo\n   Portb = &B00000001 ' Merah\n   Waitms 800\n   Portb = &B00000010 ' Kuning\n   Waitms 300\n   Portb = &B00000100 ' Hijau\n   Waitms 800\nLoop`,
+            lcdDynamic: `$regfile = "m8535.dat"\n$crystal = 8000000\n\nConfig Lcd = 16 * 2\nDim Hitung As Byte\nHitung = 0\nCls\nLcd "SMK TEI JUARA"\n\nDo\n   Lowerline\n   Lcd "Hitung Data: "; Hitung\n   Waitms 500\n   Incr Hitung\nLoop`
+        };
+
+        function updateSimSpeed(val) {
+            simSpeedMs = parseInt(val);
+            document.getElementById('sim-speed-label').innerText = `${simSpeedMs}ms`;
+            if (isSimRunning) {
+                runSimulator();
+            }
+        }
+
+        function loadSelectedSampleCode() {
+            const selected = document.getElementById('sample-code-select').value;
+            if (sampleCodes[selected]) {
+                document.getElementById('sim-code-input').value = sampleCodes[selected];
+                playSound('click');
+            }
+        }
+
+        const puzzleLevels = [
+            {
+                id: 1,
+                title: "Level 1: LED Blink Kedip Dasar",
+                desc: "Susun program dasar untuk mengkonfigurasi PORTB sebagai output dan berkedip dengan interval delay.",
+                reward: 100,
+                items: [
+                    { id: 1, text: '$regfile = "m8535.dat"' },
+                    { id: 2, text: '$crystal = 8000000' },
+                    { id: 3, text: 'Config Portb = Output' },
+                    { id: 4, text: 'Do' },
+                    { id: 5, text: '   Portb = &B11111111' },
+                    { id: 6, text: '   Waitms 500' },
+                    { id: 7, text: 'Loop' }
+                ]
+            },
+            {
+                id: 2,
+                title: "Level 2: Input Push Button (Active Low)",
+                desc: "Susun logika membaca tombol SW1 pada PIND.0 dengan pull-up internal untuk menghidupkan LED.",
+                reward: 120,
+                items: [
+                    { id: 1, text: '$regfile = "m8535.dat"' },
+                    { id: 2, text: 'Config Portb = Output' },
+                    { id: 3, text: 'Config Pind.0 = Input' },
+                    { id: 4, text: 'Portd.0 = 1 \' Aktifkan Resistor Pull-Up' },
+                    { id: 5, text: 'Do' },
+                    { id: 6, text: '   If Pind.0 = 0 Then Portb = &B11111111 Else Portb = 0' },
+                    { id: 7, text: 'Loop' }
+                ]
+            },
+            {
+                id: 3,
+                title: "Level 3: Simulasi Lampu Lalu Lintas 3 Warna",
+                desc: "Urutkan siklus nyala LED Lalu Lintas (Merah PB0 -> Kuning PB1 -> Hijau PB2) secara periodik.",
+                reward: 150,
+                items: [
+                    { id: 1, text: '$regfile = "m8535.dat"' },
+                    { id: 2, text: 'Config Portb = Output' },
+                    { id: 3, text: 'Do' },
+                    { id: 4, text: '   Portb = &B00000001 \' Lampu Merah ON' },
+                    { id: 5, text: '   Wait 2' },
+                    { id: 6, text: '   Portb = &B00000010 \' Lampu Kuning ON' },
+                    { id: 7, text: '   Portb = &B00000100 \' Lampu Hijau ON' },
+                    { id: 8, text: 'Loop' }
+                ]
+            },
+            {
+                id: 4,
+                title: "Level 4: Penampil Teks LCD Alfanumerik 16x2",
+                desc: "Susun perintah inisialisasi LCD 16x2 dan penulisan karakter di baris atas serta baris bawah.",
+                reward: 180,
+                items: [
+                    { id: 1, text: '$regfile = "m8535.dat"' },
+                    { id: 2, text: '$crystal = 8000000' },
+                    { id: 3, text: 'Config Lcd = 16 * 2' },
+                    { id: 4, text: 'Cls' },
+                    { id: 5, text: 'Lcd "PRAKTIKUM TEI"' },
+                    { id: 6, text: 'Lowerline' },
+                    { id: 7, text: 'Lcd "ATmega8535 OK"' }
+                ]
+            },
+            {
+                id: 5,
+                title: "Level 5: Counter Biner 8-Bit (Variabel & Loop For)",
+                desc: "Susun program pencacah biner menggunakan variabel Byte dan perulangan For-Next.",
+                reward: 200,
+                items: [
+                    { id: 1, text: '$regfile = "m8535.dat"' },
+                    { id: 2, text: 'Config Portb = Output' },
+                    { id: 3, text: 'Dim Count As Byte' },
+                    { id: 4, text: 'Do' },
+                    { id: 5, text: '   For Count = 0 To 255' },
+                    { id: 6, text: '      Portb = Count' },
+                    { id: 7, text: '      Waitms 100' },
+                    { id: 8, text: '   Next Count' },
+                    { id: 9, text: 'Loop' }
+                ]
+            }
+        ];
+
+        let currentPuzzleLevelIdx = 0;
+        let currentTargetPuzzle = [];
+
+        function renderPuzzleLevelSelector() {
+            const container = document.getElementById('puzzle-level-selector');
+            if (!container) return;
+            container.innerHTML = '';
+
+            puzzleLevels.forEach((lvl, idx) => {
+                const btn = document.createElement('button');
+                const isActive = idx === currentPuzzleLevelIdx;
+                btn.className = `px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${isActive ? 'bg-brand-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700'}`;
+                btn.innerHTML = `<i class="fa-solid fa-layer-group text-[10px]"></i> Level ${idx + 1}`;
+                btn.onclick = () => switchPuzzleLevel(idx);
+                container.appendChild(btn);
+            });
+        }
+
+        function switchPuzzleLevel(levelIdx) {
+            playSound('click');
+            currentPuzzleLevelIdx = levelIdx;
+            currentTargetPuzzle = [];
+            const nextBtn = document.getElementById('btn-next-puzzle');
+            if (nextBtn) nextBtn.classList.add('hidden');
+            renderPuzzleLevelSelector();
+            initPuzzleLevel();
+        }
+
+        function initPuzzleLevel() {
+            const lvlData = puzzleLevels[currentPuzzleLevelIdx];
+            if (!lvlData) return;
+            document.getElementById('puzzle-level-title').innerText = lvlData.title;
+            document.getElementById('puzzle-level-desc').innerText = lvlData.desc;
+            document.getElementById('puzzle-level-reward').innerHTML = `<i class="fa-solid fa-trophy mr-1"></i> Bonus +${lvlData.reward} EXP`;
+
+            const sourceBox = document.getElementById('puzzle-source');
+            if (!sourceBox) return;
+            sourceBox.innerHTML = '';
+            
+            const shuffled = [...lvlData.items].sort(() => Math.random() - 0.5);
+            shuffled.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'p-2.5 bg-slate-900 hover:bg-slate-800 border border-tech-border rounded-xl text-xs font-mono text-emerald-400 cursor-pointer flex justify-between items-center select-none transition';
+                el.innerHTML = `<span>${item.text}</span> <i class="fa-solid fa-plus text-slate-500"></i>`;
+                el.onclick = () => selectPuzzleItem(item, el);
+                sourceBox.appendChild(el);
+            });
+
+            renderTargetPuzzle();
+        }
+
+        function selectPuzzleItem(item, el) {
+            playSound('click');
+            currentTargetPuzzle.push(item);
+            el.style.display = 'none';
+            renderTargetPuzzle();
+        }
+
+        function renderTargetPuzzle() {
+            const targetBox = document.getElementById('puzzle-target');
+            if (!targetBox) return;
+            targetBox.innerHTML = '';
+
+            if (currentTargetPuzzle.length === 0) {
+                targetBox.innerHTML = `<span class="text-xs text-slate-600 font-mono block p-6 text-center">Klik balok kode di sebelah kiri untuk menyusun di sini...</span>`;
+                return;
+            }
+
+            currentTargetPuzzle.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'p-2.5 bg-slate-900 border border-brand-500/40 rounded-xl text-xs font-mono text-emerald-400 flex justify-between items-center';
+                el.innerHTML = `<span>${item.text}</span> <button onclick="removePuzzleItem(${idx})" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-xmark"></i></button>`;
+                targetBox.appendChild(el);
+            });
+        }
+
+        function removePuzzleItem(index) {
+            playSound('click');
+            currentTargetPuzzle.splice(index, 1);
+            initPuzzleLevel();
+        }
+
+        function resetCurrentPuzzleLevel() {
+            playSound('click');
+            currentTargetPuzzle = [];
+            initPuzzleLevel();
+        }
+
+        function checkPuzzle() {
+            const lvlData = puzzleLevels[currentPuzzleLevelIdx];
+            const isCorrect = currentTargetPuzzle.length === lvlData.items.length &&
+                currentTargetPuzzle.every((item, idx) => item.id === lvlData.items[idx].id);
+
+            if (isCorrect) {
+                showNotification(`🎉 HEBAT! Level ${currentPuzzleLevelIdx + 1} Selesai! (+${lvlData.reward} EXP)`);
+                addEXP(lvlData.reward);
+                
+                const nextBtn = document.getElementById('btn-next-puzzle');
+                if (currentPuzzleLevelIdx < puzzleLevels.length - 1 && nextBtn) {
+                    nextBtn.classList.remove('hidden');
+                } else {
+                    showNotification("🏆 LUAR BIASA! Anda telah menyelesaikan SELURUH level puzzle susun kode!");
+                }
+            } else {
+                playSound('beep');
+                alert("Urutan kode masih kurang tepat! Perhatikan deklarasi header ($regfile), konfigurasi port, dan penutup loop!");
+            }
+        }
+
+        function nextPuzzleLevel() {
+            if (currentPuzzleLevelIdx < puzzleLevels.length - 1) {
+                switchPuzzleLevel(currentPuzzleLevelIdx + 1);
+            }
+        }
+
+        function runSimulator() {
+            playSound('click');
+            stopSimulator();
+
+            const code = document.getElementById('sim-code-input').value;
+            const badge = document.getElementById('sim-status-badge');
+            if (badge) {
+                badge.innerText = "Status: Simulasi Berjalan (RUN)";
+                badge.className = "text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30";
+            }
+
+            isSimRunning = true;
+            let step = 0;
+            let scannerDir = 1;
+            let scannerBit = 0;
+            let counterVal = 0;
+
+            simInterval = setInterval(() => {
+                if (!isSimRunning) return;
+
+                if (code.includes('Lcd "') || code.includes('Config Lcd')) {
+                    const matches = code.match(/Lcd "([^"]+)"/g);
+                    if (matches && matches.length > 0) {
+                        const line1 = matches[0].replace(/Lcd "|"/g, '');
+                        document.getElementById('lcd-line-1').innerText = line1;
+                        if (matches.length > 1) {
+                            const line2 = matches[1].replace(/Lcd "|"/g, '');
+                            document.getElementById('lcd-line-2').innerText = line2;
+                        } else if (code.includes('Hitung')) {
+                            document.getElementById('lcd-line-2').innerText = `Hitung Data: ${step}`;
+                        }
+                    }
+                }
+
+                if (code.includes('Pind.0') || code.includes('Pind.1')) {
+                    if (buttonStates[0] === 0) {
+                        setLEDState(0xF0);
+                    } else if (buttonStates[1] === 0) {
+                        setLEDState(0x0F);
+                    } else if (buttonStates[2] === 0) {
+                        setLEDState(0xFF);
+                    } else {
+                        setLEDState(0x00);
+                    }
+                    return;
+                }
+
+                if (code.includes('Lampu') || (code.includes('&B00000001') && code.includes('&B00000010') && code.includes('&B00000100'))) {
+                    const trafficSeq = [0x01, 0x02, 0x04];
+                    setLEDState(trafficSeq[step % 3]);
+                    step++;
+                    return;
+                }
+
+                if (code.includes('Shift') || code.includes('2 ^ Shift')) {
+                    setLEDState(1 << scannerBit);
+                    scannerBit += scannerDir;
+                    if (scannerBit >= 7) scannerDir = -1;
+                    if (scannerBit <= 0) scannerDir = 1;
+                    return;
+                }
+
+                if (code.includes('Counter') || code.includes('Count')) {
+                    setLEDState(counterVal % 256);
+                    counterVal++;
+                    return;
+                }
+
+                if (code.includes('&HA5') || code.includes('&H5A')) {
+                    setLEDState(step % 2 === 0 ? 0xA5 : 0x5A);
+                } else {
+                    setLEDState(step % 2 === 0 ? 0xFF : 0x00);
+                }
+
+                step++;
+            }, simSpeedMs);
+
+            checkMissionSuccess(code);
+        }
+
+        window.onload = function() {
+            renderMissions();
+            renderPuzzleLevelSelector();
+            initPuzzleLevel();
+            renderQuiz();
+            setLEDState(0x00);
+        };
+    </script>
+</body>
+</html>
